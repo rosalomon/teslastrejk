@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fackliga Termer</title>
+    <style>
+        #interactive-graphic-widget {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            --border-color: #ccc;
+            --primary-color: #3182ce;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        #interactive-graphic-widget * {
+            box-sizing: inherit;
+        }
+
+        #interactive-graphic-widget .ig-card-container {
+            width: 100%;
+            position: relative;
+            height: 150px;
+            overflow: hidden;
+            touch-action: pan-y pinch-zoom;
+        }
+
+        #interactive-graphic-widget .ig-card-wrapper {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+            transform: translateX(100%);
+            z-index: 1;
+        }
+
+        #interactive-graphic-widget .ig-card-wrapper.ig-active {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateX(0);
+            z-index: 2;
+        }
+
+        #interactive-graphic-widget .ig-card {
+            height: 100%;
+            overflow-y: auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 
+                0 10px 30px -5px rgba(0, 0, 0, 0.1),
+                0 0 5px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+
+        #interactive-graphic-widget .ig-card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        #interactive-graphic-widget .ig-card-icon {
+            font-size: 24px;
+            margin-right: 10px;
+        }
+
+        #interactive-graphic-widget .ig-card-title {
+            margin: 0;
+            color: #333;
+            font-size: 1.5rem;
+        }
+
+        #interactive-graphic-widget .ig-card-content {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        #interactive-graphic-widget .ig-pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-top: 20px;
+            padding: 10px;
+        }
+
+        #interactive-graphic-widget .ig-pagination-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #bbb;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            padding: 0;
+        }
+
+        #interactive-graphic-widget .ig-pagination-dot.ig-active {
+            background-color: var(--primary-color);
+            transform: scale(1.2);
+        }
+    </style>
+</head>
+<body>
+    <div id="interactive-graphic-widget">
+        <div class="ig-card-container" id="igCardContainer"></div>
+        <div class="ig-pagination" id="igPagination" role="tablist"></div>
+    </div>
+
+    <script>
+        (function() {
+            const widget = document.getElementById('interactive-graphic-widget');
+            const cardContainer = widget.querySelector('#igCardContainer');
+            const pagination = widget.querySelector('#igPagination');
+
+            const cards = [
+                {
+                    title: "Kollektivavtal",
+                    icon: "📜",
+                    description: "Ett avtal mellan fack och arbetsgivare. Reglerar lön, arbetsvillkor och trygghet."
+                },
+                {
+                    title: "Strejkvakt",
+                    icon: "👷",
+                    description: "Person som övervakar att strejken följs. Finns vid arbetsplatsen under konflikt."
+                },
+                {
+                    title: "Sympatiåtgärd",
+                    icon: "🤝",
+                    description: "Åtgärd som stödjer en pågående konflikt. Utförs av andra fack för att ge stöd."
+                },
+                {
+                    title: "Svenska modellen",
+                    icon: "🇸🇪",
+                    description: "System där parterna förhandlar fram avtal. Arbetstagare och arbetsgivare möts utan lagstiftning."
+                },
+                {
+                    title: "Konflikt",
+                    icon: "⚔️",
+                    description: "När arbetsgivare och fack inte når enighet. Kan leda till strejk eller andra åtgärder."
+                }
+            ];
+
+            class CardManager {
+                constructor(container, pagination, cardData) {
+                    this.container = container;
+                    this.pagination = pagination;
+                    this.cards = [];
+                    this.currentCard = 0;
+                    this.cardData = cardData;
+
+                    this.createCards();
+                    this.createPagination();
+                    this.setupEventListeners();
+                    this.goToCard(0);
+                }
+
+                createCards() {
+                    this.cardData.forEach((data, index) => {
+                        const wrapper = document.createElement('div');
+                        wrapper.className = 'ig-card-wrapper';
+                        wrapper.setAttribute('role', 'tabpanel');
+                        wrapper.setAttribute('id', `panel-${index}`);
+                        wrapper.setAttribute('aria-labelledby', `tab-${index}`);
+
+                        const card = document.createElement('div');
+                        card.className = 'ig-card';
+
+                        const header = document.createElement('div');
+                        header.className = 'ig-card-header';
+                        
+                        const icon = document.createElement('span');
+                        icon.className = 'ig-card-icon';
+                        icon.textContent = data.icon;
+                        
+                        const title = document.createElement('h2');
+                        title.className = 'ig-card-title';
+                        title.textContent = data.title;
+                        
+                        header.append(icon, title);
+                        
+                        const description = document.createElement('p');
+                        description.className = 'ig-card-content';
+                        description.textContent = data.description;
+
+                        card.append(header, description);
+                        wrapper.appendChild(card);
+                        this.container.appendChild(wrapper);
+                        this.cards.push(wrapper);
+                    });
+                }
+
+                createPagination() {
+                    this.cardData.forEach((_, index) => {
+                        const dot = document.createElement('button');
+                        dot.className = 'ig-pagination-dot';
+                        dot.onclick = () => this.goToCard(index);
+                        this.pagination.appendChild(dot);
+                    });
+                }
+
+                setupEventListeners() {
+                    let startX, startY, isDragging = false;
+
+                    const handleTouchStart = (e) => {
+                        startX = e.touches[0].clientX;
+                        startY = e.touches[0].clientY;
+                        isDragging = true;
+                    };
+
+                    const handleTouchMove = (e) => {
+                        if (!isDragging) return;
+                        e.preventDefault();
+                    };
+
+                    const handleTouchEnd = (e) => {
+                        if (!isDragging) return;
+                        
+                        const diffX = startX - e.changedTouches[0].clientX;
+                        const diffY = startY - e.changedTouches[0].clientY;
+                        
+                        if (Math.abs(diffX) > Math.abs(diffY)) {
+                            if (Math.abs(diffX) > 50) {
+                                if (diffX > 0) {
+                                    this.nextCard();
+                                } else {
+                                    this.prevCard();
+                                }
+                            } else {
+                                this.updatePositions();
+                            }
+                        }
+                        
+                        isDragging = false;
+                    };
+
+                    this.container.addEventListener('touchstart', handleTouchStart, { passive: true });
+                    this.container.addEventListener('touchmove', handleTouchMove, { passive: false });
+                    this.container.addEventListener('touchend', handleTouchEnd);
+
+                    document.addEventListener('keydown', (e) => {
+                        if (document.activeElement.closest('#interactive-graphic-widget')) {
+                            switch (e.key) {
+                                case 'ArrowLeft':
+                                    this.prevCard();
+                                    break;
+                                case 'ArrowRight':
+                                    this.nextCard();
+                                    break;
+                            }
+                        }
+                    });
+                }
+
+                goToCard(index) {
+                    this.currentCard = Math.max(0, Math.min(index, this.cards.length - 1));
+                    this.updatePositions();
+                    this.updatePagination();
+                }
+
+                nextCard() {
+                    this.goToCard(this.currentCard + 1);
+                }
+
+                prevCard() {
+                    this.goToCard(this.currentCard - 1);
+                }
+
+                updatePositions() {
+                    this.cards.forEach((card, index) => {
+                        card.style.transform = `translateX(${(index - this.currentCard) * 100}%)`;
+                        card.classList.toggle('ig-active', index === this.currentCard);
+                        card.setAttribute('aria-hidden', index !== this.currentCard);
+                    });
+                }
+
+                updatePagination() {
+                    const dots = this.pagination.querySelectorAll('.ig-pagination-dot');
+                    dots.forEach((dot, index) => {
+                        dot.classList.toggle('ig-active', index === this.currentCard);
+                        dot.setAttribute('aria-selected', index === this.currentCard ? 'true' : 'false');
+                    });
+                }
+            }
+
+            new CardManager(cardContainer, pagination, cards);
+        })();
+    </script>
+</body>
+</html>
